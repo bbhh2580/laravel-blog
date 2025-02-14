@@ -14,11 +14,7 @@ use mysql_xdevapi\Exception;
 class UsersController extends Controller
 {
 
-    public function index()
-    {
-        $users = User::all();
-        return view('users.index', compact('users')); // 确保这里的路径正确
-    }
+  
     /**
      * Show the form for signup.
      *
