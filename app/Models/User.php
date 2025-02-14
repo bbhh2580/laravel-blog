@@ -8,6 +8,13 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+/**
+ * Class User
+ *
+ * @property string name
+ * @property string email
+ * @property string password
+ */
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable;
@@ -41,4 +48,16 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * 通过邮箱到 gravatar.com 获取头像
+     *
+     * @param string $size
+     * @return string
+     */
+    public function gravatar(string $size = '100'): string
+    {
+        $hash = md5(trim(strtolower($this->attributes['email'])));
+        return "https://www.gravatar.com/avatar/$hash?s=$size";
+    }
 }

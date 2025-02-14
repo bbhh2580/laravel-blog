@@ -1,3 +1,4 @@
+
 <?php
 
 use Illuminate\Support\Facades\Facade;
@@ -82,7 +83,7 @@ return [
     |
     */
 
-    'locale' => 'en',
+    'locale' => 'zh_CN',
 
     /*
     |--------------------------------------------------------------------------
