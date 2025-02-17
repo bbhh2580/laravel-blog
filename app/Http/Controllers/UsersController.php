@@ -3,18 +3,39 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Auth\Access\AuthorizationException;
 use Illuminate\Contracts\Foundation\Application;
 use Illuminate\Contracts\View\Factory;
 use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
 use mysql_xdevapi\Exception;
 
 class UsersController extends Controller
 {
 
-  
+  public function __construct()
+  {
+      // 除了 show create store index 方法，其他方法都需要登录
+      $this->middleware('auth', [
+        'except' => ['show', 'create', 'store', 'index']
+      ]);
+  }
+
+    /**
+     * Show all users.
+     *
+     * @return Factory｜View｜Application
+     */
+    public function index(): Factory|View|Application
+    {
+        $users = User::paginate(10);
+        return view('users.index', compact('users'));
+    }
+
+
     /**
      * Show the form for signup.
      *
@@ -57,7 +78,50 @@ class UsersController extends Controller
             'password' => bcrypt($request->password)
         ]);
 
+
+        Auth::login($user);
         session()->flash('success', 'Congratulations on your successful registration!');
+        return redirect()->route('users.show', [$user]);
+    }
+
+    /**
+     * Show the form for editing user information.
+     *
+     * @param User $user
+     * @return Application|Factory|View
+     * @throws AuthorizationException
+     */
+    public function edit(User $user): View|Factory|Application
+    {
+        $this->authorize('update', $user);
+        return view('users.edit', compact('user'));
+    }
+
+    /**
+     * Update user information
+     *
+     * @param User $user
+     * @param Request $request
+     * @return RedirectResponse
+     * @throws ValidationException
+     * @throws AuthorizationException
+     */
+    public function update(Request $request, User $user): RedirectResponse
+    {
+        $this->authorize('update', $user);
+        $this->validate($request, [
+            'name' => 'required|max:50',
+            'password' => 'nullable|confirmed|min:6'
+        ]);
+
+        $data = [];
+        $data['name'] = $request->name;
+        if ($request->password){
+            $data['password'] = bcrypt($request->password);
+        }
+        $user->update($data);
+
+        session()->flash('success', 'Congratulations on your successful update!');
         return redirect()->route('users.show', [$user]);
     }
 }
