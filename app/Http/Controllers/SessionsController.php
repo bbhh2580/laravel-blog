@@ -49,6 +49,11 @@ class SessionsController extends Controller
             return redirect()->back()->withInput();
         }
 
+        if (!Auth::user()->activated) {
+            session()->flash('danger', 'Your account is not activated, please contact the administrator.');
+            return redirect('/');
+        }
+
         session()->flash('success', 'You have successfully logged in');
         $fallback = route('users.show', Auth::user());
         // intended() 重新定向到上一次请求的页面上

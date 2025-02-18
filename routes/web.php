@@ -31,3 +31,17 @@ Route::post('login', [SessionsController::class,'store'])->name('login');
 // 销毁会话（退出登录）
 Route::delete('logout', [SessionsController::class,'destroy'])->name('logout');
 
+// http://127.0.0.1:8000/signup/confirm/{token}
+// http://lravel-blog.local/signup/confirm/{token}
+Route::get('signup/confirm/{token}', [UsersController::class,'confirmEmail'])->name('confirm_email');
+
+// 展示重置密码的邮箱发送页面
+Route::get('password/reset', [PasswordController::class, 'showLinkRequestForm'])->name('password.request');
+// 提交邮箱地址，发送重置密码邮件
+Route::post('password/email', [PasswordController::class, 'sendResetLinkEmail'])->name('password.email');
+// 显示更新密码的表单
+Route::get('password/reset/{token}', [PasswordController::class, 'showResetForm'])->name('password.reset');
+// 提交更新密码的表单, 重置密码
+Route::post('password/reset', [PasswordController::class, 'reset'])->name('password.update');
+
+

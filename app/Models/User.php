@@ -6,6 +6,7 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Str;
 use Laravel\Sanctum\HasApiTokens;
 
 /**
@@ -14,6 +15,9 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string name
  * @property string email
  * @property string password
+ * @property string activation_token
+ * @property bool activated
+ * @property bool is_admin
  */
 class User extends Authenticatable
 {
@@ -48,6 +52,20 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];
+
+    /**
+     * 监听用户创建事件, 在用户创建时自动生成激活令牌
+     *
+     * @return void
+     */
+    public static function boot(): void
+    {
+        parent::boot();
+
+        static::creating(function ($user) {
+            $user->activation_token = Str::random(10);
+        });
+    }
 
     /**
      * 通过邮箱到 gravatar.com 获取头像

@@ -20,7 +20,12 @@ class UsersController extends Controller
   {
       // 除了 show create store index 方法，其他方法都需要登录
       $this->middleware('auth', [
-        'except' => ['show', 'create', 'store', 'index']
+        'except' => ['show', 'create', 'store', 'index', 'confirmEmail']
+      ]);
+
+      // 只允许未登录用户访问注册页面, 即 create 方法
+      $this->middleware('guest', [
+          'only' => ['create']
       ]);
   }
 
@@ -78,10 +83,26 @@ class UsersController extends Controller
             'password' => bcrypt($request->password)
         ]);
 
-
-        Auth::login($user);
+        $this->sendEmailConfirmationTo($user);
         session()->flash('success', 'Congratulations on your successful registration!');
-        return redirect()->route('users.show', [$user]);
+        return redirect('/');
+    }
+
+    /**
+     * Send email confirmation
+     */
+    protected function sendEmailConfirmationTo ($user): void
+    {
+        $view = 'emails.confirm';
+        $data = compact('user');
+        $from = 'hana@gmail.com';
+        $name = 'hana\'s blog';
+        $to = $user->email;
+        $subject = 'Congratulations on your successful registration!';
+
+        Mail::send($view, $data, function ($message) use ($from, $name, $to, $subject) {
+            $message->from($from, $name)->to($to)->subject($subject);
+        });
     }
 
     /**
@@ -122,6 +143,40 @@ class UsersController extends Controller
         $user->update($data);
 
         session()->flash('success', 'Congratulations on your successful update!');
+        return redirect()->route('users.show', $user);
+    }
+
+    /**
+     * Delete user.
+     *
+     * @param User $user
+     * @return RedirectResponse
+     * @throws AuthorizationException
+     */
+    public function destroy(User $user): RedirectResponse
+    {
+        $this->authorize('destroy', $user);
+        $user->delete();
+        session()->flash('success', 'Congratulations on your successful delete!');
+        return back();
+    }
+
+    /**
+     * Confirm email.
+     *
+     * @param $token
+     * @return RedirectResponse
+     */
+    public function confirmEmail($token): RedirectResponse
+    {
+        $user = User::where('activation_token', $token)->firstOrFail();
+
+        $user->activated = true;
+        $user->activation_token = null;
+        $user->save();
+
+        Auth::login($user);
+        session()->flash('success', 'Congratulations, activation successful.');
         return redirect()->route('users.show', [$user]);
     }
 }
