@@ -11,6 +11,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Mail;
 use mysql_xdevapi\Exception;
 
 class UsersController extends Controller
@@ -25,7 +26,7 @@ class UsersController extends Controller
 
       // 只允许未登录用户访问注册页面, 即 create 方法
       $this->middleware('guest', [
-          'only' => ['create']
+          'only' => ['store']
       ]);
   }
 
@@ -59,7 +60,10 @@ class UsersController extends Controller
      */
     public function show(User $user): View|Factory|Application
     {
-        return view('users.show', compact('user'));
+        $statuses = $user->statuses()
+            ->orderBy('created_at', 'desc')
+            ->paginate(10);
+        return view('users.show', compact('user', 'statuses'));
     }
 
     /**
@@ -95,13 +99,11 @@ class UsersController extends Controller
     {
         $view = 'emails.confirm';
         $data = compact('user');
-        $from = 'hana@gmail.com';
-        $name = 'hana\'s blog';
         $to = $user->email;
         $subject = 'Congratulations on your successful registration!';
 
-        Mail::send($view, $data, function ($message) use ($from, $name, $to, $subject) {
-            $message->from($from, $name)->to($to)->subject($subject);
+        Mail::send($view, $data, function ($message) use ($to, $subject) {
+            $message->to($to)->subject($subject);
         });
     }
 

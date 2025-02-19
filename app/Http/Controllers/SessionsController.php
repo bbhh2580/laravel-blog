@@ -19,6 +19,11 @@ class SessionsController extends Controller
         $this->middleware('guest', [
             'only' => ['create']
         ]);
+
+        // 使用 throttle 中间件对登录 store 方法进行请求次数限制, throttle：10,10 10分钟内最多只能尝试10次
+//        $this->middleware('throttle:10,10', [
+//            'only' => ['store']
+//        ]);
     }
 
     /**

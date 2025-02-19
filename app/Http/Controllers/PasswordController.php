@@ -16,6 +16,14 @@ use Illuminate\Support\Str;
 class PasswordController extends Controller
 {
 
+    public function __construct()
+    {
+        $this->middleware('throttle:3.10', [
+            'only' => ['sendResetLinkEmail'],
+        ]);
+    }
+
+
     /**
      * Show the form to request a password reset link.
      *

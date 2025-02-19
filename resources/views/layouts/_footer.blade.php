@@ -1,4 +1,4 @@
-<footer class="footer">
+<footer class="footer mb-3">
     <img class="brand-icon" src="https://laravel.com/img/logomark.min.svg" alt="Laravel">
     <a href="https://laravel.com" target="_blank">Laravel</a>
 

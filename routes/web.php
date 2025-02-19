@@ -6,6 +6,7 @@ use App\Http\Controllers\UsersController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\StaticPagesController;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -44,5 +45,8 @@ Route::post('password/email', [PasswordController::class, 'sendResetLinkEmail'])
 Route::get('password/reset/{token}', [PasswordController::class, 'showResetForm'])->name('password.reset');
 // 提交更新密码的表单, 重置密码
 Route::post('password/reset', [PasswordController::class, 'reset'])->name('password.update');
+
+// 微博相关操作
+Route::resource('statuses', 'StatusesController', ['only' => ['store', 'destroy']]);
 
 

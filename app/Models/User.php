@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -18,6 +19,11 @@ use Laravel\Sanctum\HasApiTokens;
  * @property string activation_token
  * @property bool activated
  * @property bool is_admin
+ * @property Status[] statuses
+ * @property string email_verified_at
+ * @property string remember_token
+ * @property string created_at
+ * @property string updated_at
  */
 class User extends Authenticatable
 {
@@ -77,5 +83,22 @@ class User extends Authenticatable
     {
         $hash = md5(trim(strtolower($this->attributes['email'])));
         return "https://www.gravatar.com/avatar/$hash?s=$size";
+    }
+
+    /**
+     * The user has many statuses
+     *
+     * @return HasMany
+     */
+    public function statuses(): HasMany
+    {
+        // 一个用户拥有多条微博，一对多的关系
+        return $this->hasMany(Status::class);
+    }
+
+    public function feed(): HasMany
+    {
+        return $this->statuses()
+            ->orderBy('created_at', 'desc');
     }
 }
