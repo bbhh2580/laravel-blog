@@ -4,18 +4,17 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
+return new class extends Migration {
     /**
      * Run the migrations.
      *
      * @return void
      */
-    public function up()
+    public function up(): void
     {
         Schema::table('users', function (Blueprint $table) {
             $table->string('activation_token')->nullable();
-            $table->boolean('activation')->default(false);
+            $table->boolean('activated')->default(false);
         });
     }
 
@@ -24,11 +23,15 @@ return new class extends Migration
      *
      * @return void
      */
-    public function down()
+    public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            $table->dropColumn('activation_token');
-            $table->dropColumn('activation');
+            if (Schema::hasColumn('users', 'activation_token')) {
+                $table->dropColumn('activation_token');
+            }
+            if (Schema::hasColumn('users', 'activated')) {
+                $table->dropColumn('activated');
+            }
         });
     }
 };
