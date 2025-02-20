@@ -2,9 +2,9 @@
 
 namespace App\Models;
 
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Support\Str;
@@ -13,6 +13,7 @@ use Laravel\Sanctum\HasApiTokens;
 /**
  * Class User
  *
+ * @property int id
  * @property string name
  * @property string email
  * @property string password
@@ -86,19 +87,91 @@ class User extends Authenticatable
     }
 
     /**
-     * The user has many statuses
+     * The user has many statuses.
      *
      * @return HasMany
      */
     public function statuses(): HasMany
     {
-        // 一个用户拥有多条微博，一对多的关系
+        // 一个用户拥有多条微博, 一对多关系
         return $this->hasMany(Status::class);
     }
 
-    public function feed(): HasMany
+    /**
+     * 获取用户的微博动态流, 包括本人和所关注用户的动态
+     */
+    public function feed()
     {
-        return $this->statuses()
+        $user_ids = $this->followings->pluck('id')->toArray();
+        $user_ids[] = $this->id;
+        return Status::whereIn('user_id', $user_ids)
+            ->with('user')
             ->orderBy('created_at', 'desc');
+    }
+
+    /**
+     * The user has many followers.
+     *
+     * @return BelongsToMany
+     */
+    public function followers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'followers', 'user_id', 'follower_id');
+    }
+
+    /**
+     * The user has many followings.
+     *
+     * @return BelongsToMany
+     */
+    public function followings(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'followers', 'follower_id', 'user_id');
+    }
+
+    /**
+     * Follow a user.
+     *
+     * @param $user_ids
+     */
+    public function follow($user_ids): void
+    {
+        if (!is_array($user_ids)) {
+            $user_ids = compact('user_ids');
+        }
+
+        // attach() 在中间表中插入数据
+        // sync() 同步中间表中的数据和传入的数据
+        // detach() 在中间表中删除数据
+        // student 表, course 表, student_course 表, 处理 student_course 表
+        // 在我们这个地方, users 表, users 表, followers 表, 处理 followers 表
+
+        $this->followings()->sync($user_ids, false);
+    }
+
+    /**
+     * Unfollow a user.
+     *
+     * @param $user_ids
+     */
+    public function unfollow($user_ids): void
+    {
+        if (!is_array($user_ids)) {
+            $user_ids = compact('user_ids');
+        }
+
+        $this->followings()->detach($user_ids);
+    }
+
+    /**
+     * Determine if the current user is following the given user.
+     *
+     * @param $user_id
+     * @return bool
+     */
+    public function isFollowing($user_id): bool
+    {
+        // contains() 判断集合中是否包含给定的键
+        return $this->followings->contains($user_id);
     }
 }
