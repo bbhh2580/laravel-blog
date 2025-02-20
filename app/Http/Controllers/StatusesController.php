@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\ValidationException;
 
-class UsersController extends Controller
+class StatusesController extends Controller
 {
     public function __construct()
     {

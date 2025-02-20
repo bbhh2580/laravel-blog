@@ -10,37 +10,39 @@ use Illuminate\Contracts\View\View;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Validation\ValidationException;
 use Illuminate\Support\Facades\Mail;
-use mysql_xdevapi\Exception;
+use Illuminate\Validation\ValidationException;
 
 class UsersController extends Controller
 {
+    public function __construct()
+    {
+        // 除了 show、create、store、index、confirmEmail 方法，其他方法都需要登录
+        $this->middleware('auth', [
+            'except' => ['show', 'create', 'store', 'index', 'confirmEmail']
+        ]);
 
-  public function __construct()
-  {
-      // 除了 show create store index 方法，其他方法都需要登录
-      $this->middleware('auth', [
-        'except' => ['show', 'create', 'store', 'index', 'confirmEmail']
-      ]);
+        // 只允许未登录用户访问注册页面, 即 create 方法
+        $this->middleware('guest', [
+            'only' => ['create']
+        ]);
 
-      // 只允许未登录用户访问注册页面, 即 create 方法
-      $this->middleware('guest', [
-          'only' => ['store']
-      ]);
-  }
+        // 使用 throttle 中间件对注册请求进行限制，throttle:10,60 表示 60 分钟内最多只能进行 10 次请求
+        $this->middleware('throttle:10,60', [
+            'only' => ['store']
+        ]);
+    }
 
     /**
      * Show all users.
      *
-     * @return Factory｜View｜Application
+     * @return Factory|View|Application
      */
     public function index(): Factory|View|Application
     {
         $users = User::paginate(10);
         return view('users.index', compact('users'));
     }
-
 
     /**
      * Show the form for signup.
@@ -88,19 +90,19 @@ class UsersController extends Controller
         ]);
 
         $this->sendEmailConfirmationTo($user);
-        session()->flash('success', 'Congratulations on your successful registration!');
+        session()->flash('success', 'The verification email has been sent to your registered email address, please check it.');
         return redirect('/');
     }
 
     /**
-     * Send email confirmation
+     * Send email confirmation.
      */
-    protected function sendEmailConfirmationTo ($user): void
+    protected function sendEmailConfirmationTo($user): void
     {
         $view = 'emails.confirm';
         $data = compact('user');
         $to = $user->email;
-        $subject = 'Congratulations on your successful registration!';
+        $subject = 'Thanks for registering LuStormstout\'s Blog! Please confirm your email address.';
 
         Mail::send($view, $data, function ($message) use ($to, $subject) {
             $message->to($to)->subject($subject);
@@ -114,14 +116,14 @@ class UsersController extends Controller
      * @return Application|Factory|View
      * @throws AuthorizationException
      */
-    public function edit(User $user): View|Factory|Application
+    public function edit(User $user): Factory|View|Application
     {
         $this->authorize('update', $user);
         return view('users.edit', compact('user'));
     }
 
     /**
-     * Update user information
+     * Update user information.
      *
      * @param User $user
      * @param Request $request
@@ -129,7 +131,7 @@ class UsersController extends Controller
      * @throws ValidationException
      * @throws AuthorizationException
      */
-    public function update(Request $request, User $user): RedirectResponse
+    public function update(User $user, Request $request): RedirectResponse
     {
         $this->authorize('update', $user);
         $this->validate($request, [
@@ -139,12 +141,12 @@ class UsersController extends Controller
 
         $data = [];
         $data['name'] = $request->name;
-        if ($request->password){
+        if ($request->password) {
             $data['password'] = bcrypt($request->password);
         }
         $user->update($data);
 
-        session()->flash('success', 'Congratulations on your successful update!');
+        session()->flash('success', 'Update user information successful!');
         return redirect()->route('users.show', $user);
     }
 
@@ -159,7 +161,7 @@ class UsersController extends Controller
     {
         $this->authorize('destroy', $user);
         $user->delete();
-        session()->flash('success', 'Congratulations on your successful delete!');
+        session()->flash('success', 'Successfully deleted user!');
         return back();
     }
 
@@ -180,5 +182,33 @@ class UsersController extends Controller
         Auth::login($user);
         session()->flash('success', 'Congratulations, activation successful.');
         return redirect()->route('users.show', [$user]);
+    }
+
+    /**
+     * Show user followings.
+     *
+     * @param User $user
+     * @return Application|Factory|View
+     */
+    public function followings(User $user): Factory|View|Application
+    {
+        $users = $user->followings()->paginate(30);
+        $title = $user->name . '关注的人';
+
+        return view('users.show_follow', compact('users', 'title'));
+    }
+
+    /**
+     * Show user followers.
+     *
+     * @param User $user
+     * @return Application|Factory|View
+     */
+    public function followers(User $user): Factory|View|Application
+    {
+        $users = $user->followers()->paginate(30);
+        $title = $user->name . '的粉丝';
+
+        return view('users.show_follow', compact('users', 'title'));
     }
 }
